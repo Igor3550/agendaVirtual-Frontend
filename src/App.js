@@ -1,24 +1,38 @@
-import logo from './logo.svg';
-import './App.css';
+import { QueryClientProvider, QueryClient } from 'react-query';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate
+} from 'react-router-dom';
+
+import Dashboard from './pages/Dashboard';
+import SchedulesPage from './pages/Dashboard/SchedulesPage';
+import ToSchedulePage from './pages/Dashboard/ToSchedule';
+import HistoryPage from './pages/Dashboard/HistoryPage';
+import WaitingPage from './pages/Dashboard/WaitingPage';
 
 function App() {
+  const queryClient = new QueryClient();
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+    <QueryClientProvider client={queryClient}>
+
+      <Router>
+        <Routes>
+          <Route path='/' element={<><Dashboard /></>}>
+            <Route index path="/*" element={<Navigate to="/" />} />
+            <Route path='/' element={<SchedulesPage />} />
+            <Route path='toSchedule' element={<ToSchedulePage />} />
+            <Route path='history' element={<HistoryPage />} />
+            <Route path='waiting' element={<WaitingPage />} />
+          </Route>
+        </Routes>
+      </Router>
+
+    </QueryClientProvider>
+    </>
   );
 }
 
