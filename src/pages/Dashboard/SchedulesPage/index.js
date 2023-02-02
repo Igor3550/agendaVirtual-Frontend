@@ -1,16 +1,22 @@
 import { useQuery } from "react-query";
-import { Link, Navigate } from "react-router-dom";
-import scheduleApi from "../../../services/api";
+import styled from "styled-components";
+import { ScheduleListComponent } from "../../../components/ScheduleList/ScheduleListComponent";
 
 const SchedulesPage = () => {
-  //const navigate = Navigate();
   
   return (
-    <>
-      <h1>schedules</h1>
-    </>
+    <SchedulesContainer>
+      <ScheduleListComponent />
+    </SchedulesContainer>
   );
 
 }
 
 export default SchedulesPage;
+
+const SchedulesContainer = styled.div`
+  width: 80%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;

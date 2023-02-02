@@ -7,6 +7,8 @@ import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { hoursList } from '../utils/getHoursList';
+import { useGetServices } from '../../hooks/Api/useServices';
+import { DatePicker } from '@mui/x-date-pickers';
 
 export const InputArea = ({ ...otherProps }) => {
   return (
@@ -14,31 +16,36 @@ export const InputArea = ({ ...otherProps }) => {
   )
 }
 
-export const SelectArea = ({ options, ...otherProps }) => {
+export const SelectArea = ({ ...otherProps }) => {
+
+  const {data, isLoading} = useGetServices();
+
   return (
     <Select {...otherProps}>
-      {options.map(option => {
-        return <option value={option.value} label={option.label} />
-      })}
+      <option value='0' label='Service' />
+      {isLoading ? 
+      <></>
+      : 
+      data.map(option => {
+        return <option key={option.id} value={option.id} label={option.name} />
+      })
+      }
     </Select>
   )
 }
 
-export const DateSelect = ({label, value, setValue }) => {
-
-  const handleChange = (newValue) => {
-    setValue(newValue);
-  };
-
+export const DateSelect = ({label, value, handleForm }) => {
   return (
     <Calendar>
       <LocalizationProvider dateAdapter={AdapterDayjs}>
         <Stack spacing={3}>
-          <DesktopDatePicker
+          <DatePicker
             label={label}
             inputFormat="DD/MM/YYYY"
+            openTo="day"
+            views={['day']}
             value={value}
-            onChange={handleChange}
+            onChange={handleForm}
             renderInput={(params) => <TextField {...params} />}
           />
         </Stack>
@@ -47,8 +54,14 @@ export const DateSelect = ({label, value, setValue }) => {
   );
 }
 
-export const HoursSelect = ({ dayHours, title, selectedHour, setSelectedHour }) => {
-  
+export const HoursSelect = ({ name, dayHours, title, selectedHour, handleForm }) => {
+  function handleClick(value) {
+    const event = {target:{
+      name:name,
+      value
+    }}
+    handleForm(event);
+  }
   return (
     <HoursArea>
       <p>{title}</p>
@@ -57,7 +70,7 @@ export const HoursSelect = ({ dayHours, title, selectedHour, setSelectedHour }) 
           if(selectedHour === hour){
             return <SelectedHour key={index}>{hour}h</SelectedHour>
           }
-          return <Hour key={index} state={dayHours[hour] ? true : false} onClick={dayHours[hour] ? ()=>{setSelectedHour(hour)} : () => {}} >{hour}h</Hour>;
+          return <Hour key={index} name={name} state={dayHours[hour] ? true : false} onClick={dayHours[hour] ? ()=>handleClick(hour) : () => {}} >{hour}h</Hour>;
         })}
       </div>
     </HoursArea>
@@ -101,6 +114,7 @@ const Calendar = styled.div`
   border-radius: 10px;
   padding: 7px;
   color: #fff;
+  margin-bottom: 10px;
 `;
 
 const HoursArea = styled.div`
@@ -127,8 +141,8 @@ const HoursArea = styled.div`
 `;
 
 const Hour = styled.div`
-  width: 30px;
-  height: 30px;
+  width: 25px;
+  height: 25px;
   background-color: ${(props) => props.state ? '#fff' : '#A3A3A3'};
   border-radius: 5px;
   color: ${(props) => props.state ? '#FF5CA1' : '#fff'};
@@ -136,6 +150,7 @@ const Hour = styled.div`
   align-items: center;
   justify-content: center;
   margin: 3px;
+  font-size: 12px;
 
   :hover{
     ${(props) => props.state ? 'cursor: pointer;' : ''};

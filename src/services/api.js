@@ -11,7 +11,11 @@ export async function getScheduleList() {
 }
 
 export async function getDayHours(date) {
-
   const res = await axios.get(`${baseURL}/date/hours/${date}`);
-  return res.data; //Promise (return => aw)
+  return res.data;
+}
+
+export async function getServices() {
+  const res = await axios.get(`${baseURL}/services`);
+  return res.data;
 }

@@ -5,15 +5,15 @@ import styled from "styled-components";
 
 import { InputArea, SelectArea, DateSelect, HoursSelect } from "../../../components/Form";
 import { getDayHours } from "../../../services/api";
+import { useForm } from "../../../hooks/useForm";
+import { Oval } from "react-loader-spinner";
 
 const ToSchedulePage = () => {
-  const [ name, setName ] = useState();
-  const [ date, setDate ] = useState(dayjs());
-  const [ selectedHour, setSelectedHour ] = useState();
-  const [ selectedService, setSelectedService ] = useState();
   const [ dateHours, setDateHours ] = useState();
+  const [form, handleForm] = useForm({date:dayjs()});
+
   const { isFetching, refetch } = useQuery('get-day-hours', 
-    async () => await getDayHours(dayjs(date).format('YYYY-MM-DD')), 
+    async () => await getDayHours(dayjs(form.date).format('YYYY-MM-DD')), 
     {
       onSuccess,
       onError
@@ -21,22 +21,15 @@ const ToSchedulePage = () => {
 
   useEffect(() => {
     refetch();
-    setSelectedHour();
-  }, [date]);
-
-  const options = [
-    {value:'service', label: 'Service'},
-    {value:1, label: 'Service1'}
-  ]
+    handleForm({target:{
+      name:'hour',
+      value:''
+    }});
+  }, [form.date]);
 
   function handleSubmit() {
-    const sendScheduleBody = {
-      name,
-      date: dayjs(date).format('YYYY-MM-DD'),
-      hour: selectedHour,
-      service: selectedService
-    }
-    console.log(sendScheduleBody);
+    //console.log(sendScheduleBody);
+    console.log(form);
   }
 
   function onSuccess(data) {
@@ -49,23 +42,32 @@ const ToSchedulePage = () => {
   
   return (
     <ToScheduleContainer>
-      <InputArea placeholder='Cliente' value={name} onChange={(e) => setName(e.target.value)} />
-      <SelectArea options={options} onChange={(e) => setSelectedService(e.target.value)} />
+      <InputArea placeholder='Cliente' name='name' onChange={handleForm} />
+      <SelectArea name='service' onChange={handleForm} />
       <div>
         <DateSelect 
           label='Escolha o dia'
-          value={date}
-          setValue={setDate}
+          value={form.date}
+          handleForm={handleForm}
+          name='date'
         />
         {isFetching ? 
-          <p>Loading...</p>
+          <Oval
+            height={20}
+            width={20}
+            color="#fff"
+            visible={true}
+            ariaLabel='oval-loading'
+            secondaryColor="#FFA3CF"
+          />
           :
             dateHours ? 
               <HoursSelect 
                 title='Selecione o horário:' 
                 dayHours={dateHours} 
-                selectedHour={selectedHour} 
-                setSelectedHour={setSelectedHour} 
+                selectedHour={form.hour} 
+                handleForm={handleForm} 
+                name='hour'
               />
             :
               <></>
