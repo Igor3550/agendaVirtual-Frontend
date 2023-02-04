@@ -3,30 +3,79 @@ import { IconContext } from "react-icons";
 import { BsTrash } from "react-icons/bs";
 import { HiOutlinePencil } from "react-icons/hi";
 import { EditScheduleModal } from "./EditScheduleModal";
-import { useState } from "react";
+import { DeleteScheduleComponent } from "./DeleteScheduleComponent";
+import { useEffect, useState } from "react";
+import dayjs from "dayjs";
+import { useGetServices } from "../../hooks/Api/useServices";
+import { finishSchedule } from "../../services/api";
+import { Oval } from "react-loader-spinner";
+import { Confirmation } from "../Confirmation";
 
-export const ScheduleComponent = () => {
-
+export const ScheduleComponent = ({ schedule, refetch }) => {
+  const [ deleteConfirmationView, setDeleteConfirmationView ] = useState(false);
+  const [ confirmationView, setConfirmationView ] = useState(false);
   const [ editModal, setEditModal ] = useState(false);
+  const [ loadingFinish, setLoadingFinish ] = useState(false);
+  const [ scheduleService, setScheduleService ] = useState({});
+
+  const { data } = useGetServices();
+
+  useEffect(() => {
+    if(data){
+      data.forEach(service => {
+        if(Number(service.id) === Number(schedule.service_id)) return setScheduleService(service)
+      });
+    }
+  }, [data]);
+
+  async function handleFinishSchedule() {
+    setLoadingFinish(true);
+    try {
+      await finishSchedule(schedule.id);
+    } catch (error) {
+      console.log(error);
+      alert('Ouve um erro ao finalizar o agendamento!')
+    }
+    setLoadingFinish(false);
+    setConfirmationView(false);
+    refetch();
+  }
 
   return (
     <ScheduleContainer>
-      {editModal ? <EditScheduleModal setVisible={setEditModal} /> : <></>}
+      {editModal ? <EditScheduleModal setVisible={setEditModal} schedule={schedule} service={scheduleService} /> : <></>}
       <IconContext.Provider value={{ className: 'icons' }} >
 
         <TopContext>
           <ClientInfo>
-            <p><strong>Cliente:</strong> Andressa Dias</p>
-            <p><strong>Horário:</strong> 7h</p>
-            <p><strong>Serviço:</strong> Fibra de vidro</p>
-            <p><strong>Data:</strong> 01/12</p>
+            <p><strong>Cliente:</strong> {schedule.clientName}</p>
+            <p><strong>Horário:</strong> {schedule.hour}h</p>
+            <p><strong>Serviço:</strong> {scheduleService ? scheduleService.name : ''}</p>
+            <p><strong>Data:</strong> {dayjs(schedule.date).format('DD/MM')}</p>
           </ClientInfo>
           <SideButtonsArea>
             <SideButton onClick={() => setEditModal(!editModal)} ><HiOutlinePencil /></SideButton>
-            <SideButton><BsTrash /></SideButton>
+            <SideButton onClick={() => setDeleteConfirmationView(true)} >
+              <BsTrash />
+            </SideButton>
+            <DeleteScheduleComponent scheduleId={schedule.id} confirmationView={deleteConfirmationView} setConfirmationView={setDeleteConfirmationView} />
           </SideButtonsArea>
         </TopContext>
-        <EndButton>Finalizar</EndButton>
+        <EndButton onClick={() => setConfirmationView(true)} >
+          {loadingFinish ?
+            <Oval
+            height={20}
+            width={20}
+            color="#fff"
+            visible={true}
+            ariaLabel='oval-loading'
+            secondaryColor="#FFA3CF"
+            />
+            :
+            <>Finalizar</>
+          }
+        </EndButton>
+        {confirmationView ? <Confirmation setConfirmationView={setConfirmationView} confirmationFunction={handleFinishSchedule} >Deseja finalizar esse agendamento?</Confirmation> : <></> }
 
       </IconContext.Provider>
     </ScheduleContainer>
@@ -100,6 +149,9 @@ const EndButton = styled.button`
   font-size: 20px;
   font-weight: 700;
   color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   :hover{
     cursor: pointer;

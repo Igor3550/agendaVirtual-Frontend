@@ -15,8 +15,8 @@ export const Container = styled.div`
   min-height: 775px;
   display: flex;
   border-radius: 10px 10px 0 0;
-  padding: 10px;
   padding-top: 30px;
   justify-content: center;
   background-color: #FF5CA1;
+  overflow-y: auto;
 `;

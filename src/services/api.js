@@ -1,13 +1,10 @@
 import axios from "axios";
-import dayjs from "dayjs";
 
 const baseURL = process.env.REACT_APP_BASE_URL;
 
 export async function getScheduleList() {
-  const result = await fetch(`${baseURL}/schedule`, {
-    method: "GET"
-  });
-  return result.json(); //Promise (return => aw)
+  const result = await axios.get(`${baseURL}/schedule`);
+  return result.data;
 }
 
 export async function getDayHours(date) {
@@ -18,4 +15,50 @@ export async function getDayHours(date) {
 export async function getServices() {
   const res = await axios.get(`${baseURL}/services`);
   return res.data;
+}
+
+export async function getWaiting() {
+  const res = await axios.get(`${baseURL}/waiting`);
+  return res.data;
+}
+
+export async function getHistory(name = null) {
+  const res = await axios.get(`${baseURL}/history?name=${name}`);
+  return res.data;
+}
+
+export async function createSchedule(body) {
+  const res = await axios.post(`${baseURL}/schedule`, body);
+
+  return res;
+}
+
+export async function createWaiting(body) {
+  const res = await axios.post(`${baseURL}/waiting`, body);
+
+  return res;
+}
+
+export async function updateSchedule(body, id) {
+  const res = await axios.put(`${baseURL}/schedule/${id}`, body);
+
+  return res;
+}
+
+export async function deleteSchedule(id) {
+  const res = await axios.delete(`${baseURL}/schedule/${id}`);
+
+  return res;
+}
+
+export async function deleteWaiting(id) {
+  const res = await axios.delete(`${baseURL}/waiting/${id}`);
+
+  return res;
+}
+
+export async function finishSchedule(id) {
+  const res = await axios.put(`${baseURL}/schedule/finish/${id}`);
+
+  return res;
 }

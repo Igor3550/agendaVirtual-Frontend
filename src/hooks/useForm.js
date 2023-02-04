@@ -3,6 +3,13 @@ import { useState } from "react";
 export const useForm = ( initValue = {} ) => {
   const [ form, setForm ] = useState(initValue);
 
+  function resetForm(maintain) {
+    setForm({
+      ...form,
+      ...maintain
+    });
+  }
+
   function handleForm(event) {
     if(event.target){
       setForm({
@@ -17,6 +24,6 @@ export const useForm = ( initValue = {} ) => {
     }
   };
 
-  return [form, handleForm];
+  return [form, handleForm, resetForm];
 
 }

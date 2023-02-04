@@ -2,19 +2,22 @@ import styled from "styled-components";
 import { useEffect, useState } from "react";
 import { useQuery } from "react-query";
 import dayjs from "dayjs";
-import { Oval, Rings } from "react-loader-spinner";
+import { Oval } from "react-loader-spinner";
 
-import { getDayHours } from "../../services/api";
+import { getDayHours, updateSchedule } from "../../services/api";
 import { SelectArea, DateSelect, HoursSelect } from "../Form";
 import { useForm } from "../../hooks/useForm";
 
-export const EditScheduleModal = ({ setVisible, schedule }) => {
+export const EditScheduleModal = ({ setVisible, schedule, service }) => {
 
-  const [ form, handleForm ] = useForm({ 
-    name: 'Leopoldo',
-    date: dayjs() 
+  const [ form, handleForm, resetForm ] = useForm({ 
+    name: schedule.clientName,
+    date: schedule.date,
+    hour: schedule.hour,
+    service: schedule.service_id
   });
   const [ dayHours, setDayHours ] = useState();
+  const [ btnScheduleLoading, setBtnScheduleLoading ] = useState(false);
 
   const { isFetching, refetch } = useQuery('get-day-hours-edit', 
     async () => await getDayHours(dayjs(form.date).format('YYYY-MM-DD')), 
@@ -25,22 +28,59 @@ export const EditScheduleModal = ({ setVisible, schedule }) => {
 
   useEffect(() => {
     refetch();
-    handleForm({target:{
-      name:'hour',
-      value:''
-    }});
+    if(form.date !== schedule.date) {
+      handleForm({target:{
+        name:'hour',
+        value:''
+      }});
+    }
   }, [form.date]);
 
-  function handleUpdate() {
+  async function handleUpdate() {
+    setBtnScheduleLoading(true);
     console.log(form);
+    if(!verifyScheduleForm()) return alert("Preencha os campos corretamente!");
+
+    try {
+      const body = {
+        name: form.name,
+        date: dayjs(form.date).format('YYYY-MM-DD'),
+        hour: Number(form.hour),
+        service_id: Number(form.service)
+      }
+
+      const response = await updateSchedule(body, schedule.id);
+      console.log(response.data);
+      alert("Angendamento Alterado!");
+      resetForm({
+        name: '',
+        date: dayjs().format('YYYY-MM-DD'),
+        hour: '',
+        service: '0'
+      });
+      setVisible(false);
+
+    } catch (error) {
+      console.log(error)
+      alert("Ouve um erro ao alterar agendamento! Por favor verifique os campos!");
+    }
+    setBtnScheduleLoading(false);
+  }
+
+  function verifyScheduleForm() {
+    if(!form.name) return false;
+    if(!form.service || form.service === '0') return false;
+    if(!form.date) return false;
+    if(!form.hour) return false;
+    return true;
   }
 
   return (
     <Container>
       <Background onClick={() => setVisible(false)} />
       <ModalArea>
-        <p>Alterar agendamento de Andressa</p>
-        <SelectArea name='service' onChange={handleForm} />
+        <p>Alterar agendamento de {schedule.clientName}</p>
+        <SelectArea name='service' onChange={handleForm} value={form.service} />
         <DateHourArea>
           <DateSelect 
             label='Escolha o dia'
@@ -65,10 +105,26 @@ export const EditScheduleModal = ({ setVisible, schedule }) => {
                   selectedHour={form.hour} 
                   handleForm={handleForm} 
                   name='hour'
+                  value={form.hour}
+                  editException={schedule.hour}
+                  service={service}
                 />
               : <></>
           }
-        <SubmitButton onClick={handleUpdate}><strong>Alterar</strong></SubmitButton>
+        <SubmitButton onClick={btnScheduleLoading ? () => {} : handleUpdate}>
+          
+          {btnScheduleLoading ?
+            <Oval
+              height={20}
+              width={20}
+              color="#fff"
+              visible={true}
+              ariaLabel='oval-loading'
+              secondaryColor="#FFA3CF"
+            />
+          : <strong>Alterar</strong>
+          }
+        </SubmitButton>
         </DateHourArea>
       </ModalArea>
     </Container>
@@ -130,6 +186,9 @@ const SubmitButton = styled.button`
   border: 0;
   border-radius: 10px;
   margin-top: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   :hover{
     cursor: pointer;
   }

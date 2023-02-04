@@ -4,46 +4,89 @@ import { useQuery } from "react-query";
 import styled from "styled-components";
 
 import { InputArea, SelectArea, DateSelect, HoursSelect } from "../../../components/Form";
-import { getDayHours } from "../../../services/api";
+import { createSchedule, getDayHours } from "../../../services/api";
 import { useForm } from "../../../hooks/useForm";
 import { Oval } from "react-loader-spinner";
+import { useWainting } from "../../../contexts/WaitingContext";
 
 const ToSchedulePage = () => {
+  const waiting = useWainting();
   const [ dateHours, setDateHours ] = useState();
-  const [form, handleForm] = useForm({date:dayjs()});
+  const [ postScheduleLoading, setPostScheduleLoading ] = useState(false);
+  const [form, handleForm, resetForm] = useForm({date:dayjs()});
 
-  const { isFetching, refetch } = useQuery('get-day-hours', 
-    async () => await getDayHours(dayjs(form.date).format('YYYY-MM-DD')), 
+  const { isFetching, refetch, error } = useQuery('get-day-hours', 
+    async () => await getDayHours(dayjs(waiting.value.date ? waiting.value.date : form.date).format('YYYY-MM-DD')), 
     {
-      onSuccess,
-      onError
+      onSuccess: (data) => {setDateHours(data); console.log(data, form.date)},
+      onError: () => setDateHours()
     });
 
   useEffect(() => {
-    refetch();
     handleForm({target:{
       name:'hour',
       value:''
     }});
+    
+    if(waiting.value){
+      resetForm(waiting.value)
+      waiting.dispatch({});
+    }
+
+    refetch();
   }, [form.date]);
 
-  function handleSubmit() {
+  async function handleSubmit() {
     //console.log(sendScheduleBody);
+    setPostScheduleLoading(true);
     console.log(form);
+    if(!verifyScheduleForm()) return alert("Preencha os campos corretamente!");
+
+    try {
+      const body = {
+        name: form.name,
+        date: dayjs(form.date).format('YYYY-MM-DD'),
+        hour: Number(form.hour),
+        service_id: Number(form.service)
+      }
+
+      const response = await createSchedule(body);
+      console.log(response.data);
+      alert("Angendamento concluido!");
+      resetForm({
+        name: '',
+        date: dayjs().format('YYYY-MM-DD'),
+        hour: '',
+        service: '0'
+      });
+
+    } catch (error) {
+      console.log(error)
+      alert("Ouve um erro ao criar agendamento! Por favor verifique os campos!");
+    }
+    setPostScheduleLoading(false);
   }
 
-  function onSuccess(data) {
-    setDateHours(data)
+  function verifyScheduleForm() {
+    if(!form.name) return false;
+    if(!form.service || form.service === '0') return false;
+    if(!form.date) return false;
+    if(!form.hour) return false;
+    return true;
   }
 
-  function onError() {
-    setDateHours();
-  } 
+  if(error) {
+    if(error.code === 'ERR_NETWORK') return (
+      <ToScheduleContainer>
+        <h1>Ouve um erro ao se conectar com servidor!</h1>
+      </ToScheduleContainer>
+    )
+  };
   
   return (
     <ToScheduleContainer>
-      <InputArea placeholder='Cliente' name='name' onChange={handleForm} />
-      <SelectArea name='service' onChange={handleForm} />
+      <InputArea placeholder='Cliente' name='name' onChange={handleForm} value={form.name} />
+      <SelectArea name='service' onChange={handleForm} value={form.service} />
       <div>
         <DateSelect 
           label='Escolha o dia'
@@ -72,7 +115,17 @@ const ToSchedulePage = () => {
             :
               <></>
         }
-        <SubmitButton onClick={handleSubmit} >Agendar</SubmitButton>
+        <SubmitButton onClick={handleSubmit} >{postScheduleLoading ? 
+            <Oval
+              height={20}
+              width={20}
+              color="#fff"
+              visible={true}
+              ariaLabel='oval-loading'
+              secondaryColor="#FFA3CF"
+            />
+          : 'Agendar'}
+        </SubmitButton>
       </div>
     </ToScheduleContainer>
   );
@@ -93,6 +146,10 @@ const ToScheduleContainer = styled.div`
     flex-direction: column;
     justify-content: center;
     align-items: center;
+  }
+
+  >h1{
+    color: #fff;
   }
 `;
 

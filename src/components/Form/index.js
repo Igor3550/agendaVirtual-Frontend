@@ -3,7 +3,6 @@ import styled from "styled-components";
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { hoursList } from '../utils/getHoursList';
@@ -25,10 +24,11 @@ export const SelectArea = ({ ...otherProps }) => {
       <option value='0' label='Service' />
       {isLoading ? 
       <></>
-      : 
-      data.map(option => {
-        return <option key={option.id} value={option.id} label={option.name} />
-      })
+      : data ?
+        data.map(option => {
+          return <option key={option.id} value={option.id} label={option.name} />
+        })
+        : <></>
       }
     </Select>
   )
@@ -54,7 +54,9 @@ export const DateSelect = ({label, value, handleForm }) => {
   );
 }
 
-export const HoursSelect = ({ name, dayHours, title, selectedHour, handleForm }) => {
+export const HoursSelect = ({ name, dayHours, title, selectedHour, handleForm, editException, service }) => {
+  const [hoursExceptList, setHoursExceptList] = React.useState({});
+
   function handleClick(value) {
     const event = {target:{
       name:name,
@@ -62,6 +64,19 @@ export const HoursSelect = ({ name, dayHours, title, selectedHour, handleForm })
     }}
     handleForm(event);
   }
+
+  React.useEffect(() => {
+    if(!editException) return console.log(editException);
+    if(!service) return console.log('');
+    let hoursExcept = {};
+
+    for(let i=0; i<service.duration; i++){
+      hoursExcept[i+editException] = true;
+    };
+
+    setHoursExceptList(hoursExcept);
+  }, [])
+
   return (
     <HoursArea>
       <p>{title}</p>
@@ -70,7 +85,7 @@ export const HoursSelect = ({ name, dayHours, title, selectedHour, handleForm })
           if(selectedHour === hour){
             return <SelectedHour key={index}>{hour}h</SelectedHour>
           }
-          return <Hour key={index} name={name} state={dayHours[hour] ? true : false} onClick={dayHours[hour] ? ()=>handleClick(hour) : () => {}} >{hour}h</Hour>;
+          return <Hour key={index} name={name} state={(dayHours[hour] || hoursExceptList[hour]) ? true : false} onClick={(dayHours[hour] || hoursExceptList[hour]) ? ()=>handleClick(hour) : () => {}} >{hour}h</Hour>;
         })}
       </div>
     </HoursArea>
